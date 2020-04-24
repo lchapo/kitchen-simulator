@@ -34,10 +34,14 @@ class Kitchen(object):
     def __init__(self, env, num_cooks):
         self.env = env
         self.resources = simpy.Resource(env, num_cooks)
+        self.orders_started = []
 
-    def prepare_food(self, cook_time):
+    def prepare_food(self, order_id, cook_time):
         """The cooking process. Called when a cook is available, and takes {cook_time} to complete"""
-        yield self.env.timeout(cook_time, value=1)
+        if order_id not in self.orders_started:
+            self.orders_started.append(order_id)
+            print(f"{self.env.now} - order {order_id} started")
+        yield self.env.timeout(cook_time)
 
 
 def request_item(env, order, item, kitchen):
@@ -45,18 +49,15 @@ def request_item(env, order, item, kitchen):
         # waiting until a cook is available
         yield request
         # item is being cooked
-        print(f"{env.now} - {datetime.utcnow().strftime('%H:%M:%S')} - order {order['id']} item {item['name']} is being cooked")
-        # TODO: Commit item in progress to db
-        yield env.process(kitchen.prepare_food(cook_times[item['name']]))
-        print(f"{env.now} - {datetime.utcnow().strftime('%H:%M:%S')} - order {order['id']} item {item['name']} is done")
-        # TODO: Commit item done to db
+        yield env.process(kitchen.prepare_food(order['id'], cook_times[item['name']]))
+        # item done
 
 
 def process_order(env, order, kitchen):
     """Process a single order"""
     # wait until {order_time} to trigger order
     yield env.timeout(get_time(order['ordered_at'])-ENV_START)
-    print(f"{env.now} - {datetime.utcnow().strftime('%H:%M:%S')} - order {order['id']} received")
+    print(f"{env.now} - order {order['id']} received")
     # TODO: Commit order received to db
     events = []
     for item in order['items']:
@@ -64,10 +65,10 @@ def process_order(env, order, kitchen):
             # request each order item simultaneously
             events.append(env.process(request_item(env, order, item, kitchen))) 
     yield env.all_of(events)
-    print(f"{env.now} - {datetime.utcnow().strftime('%H:%M:%S')} - order {order['id']} completed")
+    print(f"{env.now} - order {order['id']} completed")
 
 
-def simulate_orders(orders, speed=1, num_cooks=5):
+def simulate_orders(orders, speed=10, num_cooks=100, sample=True):
     """Simulate orders coming in over time
 
     Args:
@@ -75,15 +76,18 @@ def simulate_orders(orders, speed=1, num_cooks=5):
         time, 2 is twice as fast as normal, etc.
     """
     # Create an environment and start the setup process
-    env = simpy.rt.RealtimeEnvironment(initial_time=ENV_START, factor=1/speed)
+    env = simpy.rt.RealtimeEnvironment(initial_time=ENV_START, factor=1/speed, strict=False)
     kitchen = Kitchen(env, num_cooks=num_cooks)
-    print(f"{env.now} - {datetime.utcnow().strftime('%H:%M:%S')} - starting simulation")
+    print(f"{env.now} - starting simulation")
     for idx, order in enumerate(orders):
         order['id'] = idx+1
         env.process(process_order(env, order, kitchen))
 
     # Execute
-    env.run(until=ENV_START+2000)
+    if sample:
+        env.run(until=ENV_START+2000)
+    else:
+        env.run()
 
 if __name__ == '__main__':
-    simulate_orders(orders[:3], speed=100)
+    simulate_orders(orders, speed=1000, num_cooks=1000, sample=False)
