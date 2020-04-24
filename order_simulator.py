@@ -117,19 +117,23 @@ def update_db_order_completed(env, order_id):
         execute_sql(SQL, cur)
 
 
-def simulate_orders(orders, speed=10, num_cooks=100):
+def simulate_orders(orders, simulation_speed=10, num_cooks=100):
     """Simulate orders coming in over time
 
     Args:
-      speed (int): speed at which to run the simulator, where 1 is real
-        time, 2 is twice as fast as normal, etc.
+      simulation_speed (int): speed at which to run the simulator, where
+        1 is real time, 2 is twice as fast, etc.
     """
     # run migrations
     with css_cursor() as cur:
         execute_sql(DOWN_SQL, cur)
         execute_sql(UP_SQL, cur)
     # Create an environment and start the setup process
-    env = simpy.rt.RealtimeEnvironment(initial_time=ENV_START, factor=1/speed, strict=False)
+    env = simpy.rt.RealtimeEnvironment(
+        initial_time=ENV_START,
+        factor=1/simulation_speed,
+        strict=False,
+    )
     kitchen = Kitchen(env, num_cooks=num_cooks)
     print(f"{env.now} - starting simulation")
     for idx, order in enumerate(orders):
@@ -141,4 +145,4 @@ def simulate_orders(orders, speed=10, num_cooks=100):
 
 
 if __name__ == '__main__':
-    simulate_orders(orders[:3], speed=100, num_cooks=1000)
+    simulate_orders(orders[:500], simulation_speed=1000, num_cooks=1000)
