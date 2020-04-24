@@ -9,7 +9,7 @@ with open('data/orders.json') as f:
 
 # transform items into cook time lookup
 with open('data/items.json') as f:
-    cook_times = json.load(f)
+    menu = json.load(f)
 cook_times = {i['name']:i['cook_time'] for i in menu}
 
 #TODO: write a test case for full and fractional seconds
@@ -21,7 +21,7 @@ def get_time(ts):
 # seconds before first order to start simulation
 TIME_BUFFER = 10
 tstamps = [get_time(order['ordered_at']) for order in orders]
-start = min(tstamps) - TIME_BUFFER
+ENV_START = min(tstamps) - TIME_BUFFER
 
 class Kitchen(object):
     """A kitchen has a limited number of cooks to make food in parallel.
@@ -47,7 +47,7 @@ def request_item(env, order, item, kitchen):
         # item is being cooked
         print(f"{env.now} - {datetime.utcnow().strftime('%H:%M:%S')} - order {order['id']} item {item['name']} is being cooked")
         # TODO: Commit item in progress to db
-        yield env.process(kitchen.prepare_food(menu[item['name']]))
+        yield env.process(kitchen.prepare_food(cook_times[item['name']]))
         print(f"{env.now} - {datetime.utcnow().strftime('%H:%M:%S')} - order {order['id']} item {item['name']} is done")
         # TODO: Commit item done to db
 
@@ -83,4 +83,7 @@ def simulate_orders(orders, speed=1):
         env.process(process_order(env, order, kitchen))
 
     # Execute
-    env.run(until=ENV_START+5000)
+    env.run(until=ENV_START+2000)
+
+if __name__ == '__main__':
+    simulate_orders(orders[:3], speed=100)
