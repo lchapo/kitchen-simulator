@@ -11,9 +11,9 @@ UP_SQL = """
 CREATE TABLE orders (
   id               INTEGER  PRIMARY KEY
 , status           TEXT  --one of {received, being prepared, completed}
-, received_at      DATETIME
-, started_at       DATETIME
-, completed_at     DATETIME
+, received_at      INTEGER --epochs
+, started_at       INTEGER --epochs
+, completed_at     INTEGER --epochs
 , customer_name    TEXT
 , service          TEXT
 , total_price      TEXT

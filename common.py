@@ -52,7 +52,7 @@ def css_connection():
         conn.close()
 
 
-def execute_sql(sql, cur, runtime_values=None, verbose=True):
+def execute_sql(sql, cur, runtime_values=None, verbose=False):
     """Execute SQL statement in sqlite and log
 
     Args:
@@ -70,6 +70,8 @@ def execute_sql(sql, cur, runtime_values=None, verbose=True):
         cur.execute(sql, runtime_values)
     else:
         cur.execute(sql)
+    if verbose:
+        logger.info("Done")
 
 def truncate_table(table, cur):
     """Delete all values from table

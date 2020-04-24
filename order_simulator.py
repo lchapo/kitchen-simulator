@@ -4,6 +4,15 @@ from datetime import datetime
 import json
 import simpy
 
+from common import (
+    css_cursor,
+    execute_sql,
+)
+from migrations.create_orders_table import (
+    DOWN_SQL,
+    UP_SQL,
+)
+
 with open('data/orders.json') as f:
     orders = json.load(f)
 
@@ -41,8 +50,19 @@ class Kitchen(object):
         if order_id not in self.orders_started:
             self.orders_started.append(order_id)
             print(f"{self.env.now} - order {order_id} started")
+            self.update_time_started(order_id)
         yield self.env.timeout(cook_time)
 
+    def update_time_started(self, order_id):
+        """Updates the database when the order starts being prepared"""
+        SQL = f"""
+        UPDATE orders
+        SET started_at = {self.env.now}
+        , status = 'being prepared'
+        WHERE id = {order_id};
+        """
+        with css_cursor() as cur:
+            execute_sql(SQL, cur)
 
 def request_item(env, order, item, kitchen):
     with kitchen.resources.request() as request:
@@ -58,7 +78,7 @@ def process_order(env, order, kitchen):
     # wait until {order_time} to trigger order
     yield env.timeout(get_time(order['ordered_at'])-ENV_START)
     print(f"{env.now} - order {order['id']} received")
-    # TODO: Commit order received to db
+    update_db_order_received(env, order)
     events = []
     for item in order['items']:
         for _ in range(item['quantity']):
@@ -66,15 +86,48 @@ def process_order(env, order, kitchen):
             events.append(env.process(request_item(env, order, item, kitchen))) 
     yield env.all_of(events)
     print(f"{env.now} - order {order['id']} completed")
+    update_db_order_completed(env, order['id'])
 
 
-def simulate_orders(orders, speed=10, num_cooks=100, sample=True):
+def update_db_order_received(env, order):
+    SQL = f"""
+    INSERT INTO orders (id, status, received_at, customer_name, service, total_price, items)
+    VALUES (
+        {order['id']}
+        , 'received'
+        , {env.now}
+        , '{order['name']}'
+        , '{order['service']}'
+        , {sum([i['price_per_unit'] * i['quantity'] for i in order['items']])}
+        , '{json.dumps({i['name'].replace("'", "''"):i['quantity'] for i in order['items']})}'
+    );
+    """
+    with css_cursor() as cur:
+        execute_sql(SQL, cur)
+
+
+def update_db_order_completed(env, order_id):
+    SQL = f"""
+    UPDATE orders
+    SET completed_at = {env.now}
+    , status = 'completed'
+    WHERE id = {order_id};
+    """
+    with css_cursor() as cur:
+        execute_sql(SQL, cur)
+
+
+def simulate_orders(orders, speed=10, num_cooks=100):
     """Simulate orders coming in over time
 
     Args:
       speed (int): speed at which to run the simulator, where 1 is real
         time, 2 is twice as fast as normal, etc.
     """
+    # run migrations
+    with css_cursor() as cur:
+        execute_sql(DOWN_SQL, cur)
+        execute_sql(UP_SQL, cur)
     # Create an environment and start the setup process
     env = simpy.rt.RealtimeEnvironment(initial_time=ENV_START, factor=1/speed, strict=False)
     kitchen = Kitchen(env, num_cooks=num_cooks)
@@ -84,10 +137,8 @@ def simulate_orders(orders, speed=10, num_cooks=100, sample=True):
         env.process(process_order(env, order, kitchen))
 
     # Execute
-    if sample:
-        env.run(until=ENV_START+2000)
-    else:
-        env.run()
+    env.run()
+
 
 if __name__ == '__main__':
-    simulate_orders(orders, speed=1000, num_cooks=1000, sample=False)
+    simulate_orders(orders[:3], speed=100, num_cooks=1000)
