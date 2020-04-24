@@ -67,7 +67,7 @@ def process_order(env, order, kitchen):
     print(f"{env.now} - {datetime.utcnow().strftime('%H:%M:%S')} - order {order['id']} completed")
 
 
-def simulate_orders(orders, speed=1):
+def simulate_orders(orders, speed=1, num_cooks=5):
     """Simulate orders coming in over time
 
     Args:
@@ -76,7 +76,7 @@ def simulate_orders(orders, speed=1):
     """
     # Create an environment and start the setup process
     env = simpy.rt.RealtimeEnvironment(initial_time=ENV_START, factor=1/speed)
-    kitchen = Kitchen(env, num_cooks=20)
+    kitchen = Kitchen(env, num_cooks=num_cooks)
     print(f"{env.now} - {datetime.utcnow().strftime('%H:%M:%S')} - starting simulation")
     for idx, order in enumerate(orders):
         order['id'] = idx+1
