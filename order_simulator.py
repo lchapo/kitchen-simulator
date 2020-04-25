@@ -8,10 +8,7 @@ from common import (
     css_cursor,
     execute_sql,
 )
-from migrations.create_orders_table import (
-    DOWN_SQL,
-    UP_SQL,
-)
+from migrations.create_orders_table import recreate_orders_table
 
 with open('data/orders.json') as f:
     orders = json.load(f)
@@ -125,9 +122,7 @@ def simulate_orders(orders, simulation_speed=10, num_cooks=100):
         1 is real time, 2 is twice as fast, etc.
     """
     # run migrations
-    with css_cursor() as cur:
-        execute_sql(DOWN_SQL, cur)
-        execute_sql(UP_SQL, cur)
+    recreate_orders_table()
     # Create an environment and start the setup process
     env = simpy.rt.RealtimeEnvironment(
         initial_time=ENV_START,

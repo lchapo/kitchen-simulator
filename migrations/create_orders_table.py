@@ -25,20 +25,11 @@ DOWN_SQL = """
 DROP TABLE IF EXISTS orders;
 """
 
-def run_migration():
-    """Execute and commit SQL
-
-    Examples:
-      Run UP SQL: ipython {migration_filepath}
-      Run UP SQL: ipython {migration_filepath} upgrade
-      Run DOWN SQL: ipython {migration_filepath} downgrade
-    """
-    arg = sys.argv[1] if len(sys.argv) > 1 else 'upgrade'
+def recreate_orders_table():
+    """Drop and recreate orders table"""
     with css_cursor() as cur:
-        if arg == 'upgrade':
-            execute_sql(UP_SQL, cur)
-        elif arg == 'downgrade':
-            execute_sql(DOWN_SQL, cur)
+        execute_sql(DOWN_SQL, cur)
+        execute_sql(UP_SQL, cur)
 
 if __name__ == '__main__':
     run_migration()
