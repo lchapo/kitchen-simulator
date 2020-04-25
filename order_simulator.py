@@ -55,7 +55,7 @@ class Kitchen(object):
         SQL = f"""
         UPDATE orders
         SET started_at = {self.env.now}
-        , status = 'being prepared'
+        , status = 'In Progress'
         WHERE id = {order_id};
         """
         with css_cursor() as cur:
@@ -91,7 +91,7 @@ def update_db_order_received(env, order):
     INSERT INTO orders (id, status, received_at, customer_name, service, total_price, items)
     VALUES (
         {order['id']}
-        , 'received'
+        , 'Queued'
         , {env.now}
         , '{order['name']}'
         , '{order['service']}'
@@ -107,14 +107,14 @@ def update_db_order_completed(env, order_id):
     SQL = f"""
     UPDATE orders
     SET completed_at = {env.now}
-    , status = 'completed'
+    , status = 'Completed'
     WHERE id = {order_id};
     """
     with css_cursor() as cur:
         execute_sql(SQL, cur)
 
 
-def simulate_orders(orders, simulation_speed=10, num_cooks=100):
+def simulate_orders(orders, simulation_speed=10, num_cooks=10):
     """Simulate orders coming in over time
 
     Args:
@@ -140,4 +140,4 @@ def simulate_orders(orders, simulation_speed=10, num_cooks=100):
 
 
 if __name__ == '__main__':
-    simulate_orders(orders[:500], simulation_speed=1000, num_cooks=1000)
+    simulate_orders(orders, simulation_speed=1000, num_cooks=10)

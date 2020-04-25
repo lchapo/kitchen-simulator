@@ -10,7 +10,7 @@ from common import (
 UP_SQL = """
 CREATE TABLE orders (
   id               INTEGER  PRIMARY KEY
-, status           TEXT  --one of {received, being prepared, completed}
+, status           TEXT  --one of {queued, in progress, completed}
 , received_at      INTEGER --epochs
 , started_at       INTEGER --epochs
 , completed_at     INTEGER --epochs
