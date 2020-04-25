@@ -124,13 +124,11 @@ def simulate_orders(orders, simulation_speed=10, num_cooks=10):
     # run migrations
     recreate_orders_table()
     # Create an environment and start the setup process
-    print("1")
     env = simpy.rt.RealtimeEnvironment(
         initial_time=ENV_START,
         factor=1/simulation_speed,
         strict=False,
     )
-    print("2")
     kitchen = Kitchen(env, num_cooks=num_cooks)
     print(f"{env.now} - starting simulation")
     for idx, order in enumerate(orders):
@@ -142,4 +140,4 @@ def simulate_orders(orders, simulation_speed=10, num_cooks=10):
 
 
 if __name__ == '__main__':
-    simulate_orders(orders[:3], simulation_speed=100, num_cooks=10)
+    simulate_orders(orders, simulation_speed=100, num_cooks=10)

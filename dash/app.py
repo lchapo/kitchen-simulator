@@ -20,6 +20,9 @@ from common import css_connection
 app = dash.Dash(__name__)
 server = app.server
 
+# how frequently to refresh the data
+REFRESH_INTERVAL_SECONDS = 5
+
 SQL = """
 SELECT status
 , COUNT(*) as cnt
@@ -32,19 +35,20 @@ def get_fresh_data():
     """Query SQLite, Return dataframe"""
     with css_connection() as conn:
         return pd.read_sql_query(SQL, conn)
-    # return pd.DataFrame({'status': ['one', 'two'], 'cnt': [50, 75]})
 
 app.layout = html.Div(
-    html.Div([
-        html.H4('Current Order Status'),
-        html.Div(id='live-update-text'),
-        dcc.Graph(id='live-update-graph'),
-        dcc.Interval(
-            id='interval-component',
-            interval=5000, # in milliseconds
-            n_intervals=0
-        )
-    ])
+    html.Div(
+        [
+            html.H4('Simulation Live Dashboard'),
+            html.Div(id='live-update-text'),
+            dcc.Graph(id='live-update-graph'),
+            dcc.Interval(
+                id='interval-component',
+                interval=REFRESH_INTERVAL_SECONDS * 1000, # in milliseconds
+                n_intervals=0
+            )
+        ],
+    )
 )
 
 @app.callback(Output('live-update-text', 'children'),
@@ -62,7 +66,11 @@ def update_graph_live(n):
             {'x': df['status'], 'y': df['cnt'], 'type': 'bar'},
         ],
         'layout': {
-            'title': 'Dash Data Visualization'
+            'title': 'Current Orders by Status',
+            'plot_bgcolor': 'rgba(0,0,0,0)',
+            'paper_bgcolor': 'rgba(0,0,0,0)',
+            'font': {'color': 'white'},
+            'yaxis': {'showgrid': False},
         }
     }
 
@@ -70,4 +78,4 @@ def update_graph_live(n):
 
 
 if __name__ == '__main__':
-    app.run_server(host='0.0.0.0', debug=True, port=8050)
+    app.run_server(host='0.0.0.0', port=8050)
