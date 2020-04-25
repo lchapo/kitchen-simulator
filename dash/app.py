@@ -15,11 +15,7 @@ import dash_html_components as html
 import numpy as np
 import pandas as pd
 
-from common import (
-    css_connection,
-    css_cursor,
-    execute_sql,
-)
+from common import css_connection
 
 app = dash.Dash(__name__)
 server = app.server
@@ -36,6 +32,7 @@ def get_fresh_data():
     """Query SQLite, Return dataframe"""
     with css_connection() as conn:
         return pd.read_sql_query(SQL, conn)
+    # return pd.DataFrame({'status': ['one', 'two'], 'cnt': [50, 75]})
 
 app.layout = html.Div(
     html.Div([
@@ -73,4 +70,4 @@ def update_graph_live(n):
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(host='0.0.0.0', debug=True, port=8050)

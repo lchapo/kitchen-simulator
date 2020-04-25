@@ -6,7 +6,7 @@ import sqlite3
 import sys
 
 
-CSS_DATABASE = 'css.db'
+CSS_DATABASE = 'db/css.db'
 ORDERS_TABLE = 'orders'
 
 def setup_logging(module=None, level=logging.INFO):

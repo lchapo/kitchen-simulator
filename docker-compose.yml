@@ -1,0 +1,16 @@
+version: '3'
+services:
+  
+  simulator:
+    build: './simulator'
+    volumes:
+      - ./db:/simulator/db/
+
+  dash-app:
+    build: './dash'
+    ports:
+      - "8050:8050"
+    depends_on:
+      - simulator
+    volumes:
+      - ./db:/dash/db/
