@@ -1,7 +1,6 @@
 from contextlib import contextmanager
 import csv
 import logging
-import requests
 import time
 import sqlite3
 import sys

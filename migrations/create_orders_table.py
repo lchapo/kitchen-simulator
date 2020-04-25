@@ -28,8 +28,8 @@ DROP TABLE IF EXISTS orders;
 def recreate_orders_table():
     """Drop and recreate orders table"""
     with css_cursor() as cur:
-        execute_sql(DOWN_SQL, cur)
-        execute_sql(UP_SQL, cur)
+        execute_sql(DOWN_SQL, cur, verbose=True)
+        execute_sql(UP_SQL, cur, verbose=True)
 
 if __name__ == '__main__':
     run_migration()
