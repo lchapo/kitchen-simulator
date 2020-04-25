@@ -22,3 +22,13 @@ def orders_by_status():
     GROUP BY status
     ORDER BY status;
     """
+
+@query_to_df
+def all_timestamps():
+    return """
+    SELECT 
+      received_at
+    , started_at
+    , completed_at
+    FROM orders;
+    """
