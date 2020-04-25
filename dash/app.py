@@ -1,40 +1,24 @@
 #!/usr/bin python
 
 from datetime import datetime
-import os
-import pathlib
 
 import dash
 import dash_core_components as dcc
 from dash.dependencies import (
     Input,
     Output,
-    State,
 )   
 import dash_html_components as html
-import numpy as np
-import pandas as pd
 
-from common import css_connection
+from sql import (
+    orders_by_status,
+)
 
 app = dash.Dash(__name__)
 server = app.server
 
 # how frequently to refresh the data
 REFRESH_INTERVAL_SECONDS = 5
-
-SQL = """
-SELECT status
-, COUNT(*) as cnt
-FROM orders
-GROUP BY status
-ORDER BY status
-"""
-
-def get_fresh_data():
-    """Query SQLite, Return dataframe"""
-    with css_connection() as conn:
-        return pd.read_sql_query(SQL, conn)
 
 app.layout = html.Div(
     html.Div(
@@ -60,7 +44,7 @@ def update_time(n):
 @app.callback(Output('live-update-graph', 'figure'),
               [Input('interval-component', 'n_intervals')])
 def update_graph_live(n):
-    df = get_fresh_data()
+    df = orders_by_status()
     fig={
         'data': [
             {'x': df['status'], 'y': df['cnt'], 'type': 'bar'},

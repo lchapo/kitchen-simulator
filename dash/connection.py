@@ -1,9 +1,5 @@
 from contextlib import contextmanager
-import csv
-import logging
-import time
 import sqlite3
-import sys
 
 CSS_DATABASE = 'db/css.db'
 

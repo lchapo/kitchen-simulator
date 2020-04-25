@@ -46,7 +46,6 @@ class Kitchen(object):
         """The cooking process. Called when a cook is available, and takes {cook_time} to complete"""
         if order_id not in self.orders_started:
             self.orders_started.append(order_id)
-            print(f"{self.env.now} - order {order_id} started")
             self.update_time_started(order_id)
         yield self.env.timeout(cook_time)
 
@@ -74,7 +73,6 @@ def process_order(env, order, kitchen):
     """Process a single order"""
     # wait until {order_time} to trigger order
     yield env.timeout(get_time(order['ordered_at'])-ENV_START)
-    print(f"{env.now} - order {order['id']} received")
     update_db_order_received(env, order)
     events = []
     for item in order['items']:
@@ -82,7 +80,6 @@ def process_order(env, order, kitchen):
             # request each order item simultaneously
             events.append(env.process(request_item(env, order, item, kitchen))) 
     yield env.all_of(events)
-    print(f"{env.now} - order {order['id']} completed")
     update_db_order_completed(env, order['id'])
 
 
@@ -130,7 +127,6 @@ def simulate_orders(orders, simulation_speed=10, num_cooks=10):
         strict=False,
     )
     kitchen = Kitchen(env, num_cooks=num_cooks)
-    print(f"{env.now} - starting simulation")
     for idx, order in enumerate(orders):
         order['id'] = idx+1
         env.process(process_order(env, order, kitchen))
