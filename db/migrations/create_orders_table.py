@@ -16,7 +16,7 @@ CREATE TABLE orders (
 , completed_at     INTEGER --epochs
 , customer_name    TEXT
 , service          TEXT
-, total_price      TEXT
+, total_price      INTEGER
 , items            TEXT --json
 );
 """
