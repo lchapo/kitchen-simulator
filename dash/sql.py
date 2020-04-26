@@ -30,18 +30,41 @@ def orders_by_status():
 def all_timestamps():
     return """
     SELECT 
-      received_at
-    , started_at
-    , completed_at
+      received_at - 8*60*60 as received_at
+    , started_at - 8*60*60 as started_at
+    , completed_at - 8*60*60 as completed_at
     FROM orders;
     """
 
+
+@query_to_df
+def spend_by_service():
+    return """
+    SELECT
+    service
+    , CASE
+        WHEN cast(strftime('%H', received_at - 8*60*60, 'unixepoch') as int)
+          BETWEEN 5 AND 10 THEN '1-Breakfast'
+        WHEN cast(strftime('%H', received_at - 8*60*60, 'unixepoch') as int)
+          BETWEEN 11 AND 15 THEN '2-Lunch'
+        WHEN cast(strftime('%H', received_at - 8*60*60, 'unixepoch') as int)
+          BETWEEN 16 AND 22 THEN '3-Dinner'
+        ELSE '4-Late Night'
+        END as time_of_day
+    , SUM(total_price) AS total_spent
+    FROM orders
+    GROUP BY service, time_of_day
+    ORDER BY time_of_day ASC;
+    """
+
+
 def max_timestamp():
+    """Max timestamp to approximate simulator current time"""
     sql = """
     SELECT max(
-        max(coalesce(received_at,0))
-        , max(coalesce(started_at,0))
-        , max(coalesce(completed_at,0))
+        max(coalesce(received_at - 8*60*60,0))
+        , max(coalesce(started_at - 8*60*60,0))
+        , max(coalesce(completed_at - 8*60*60,0))
     )
     FROM orders;
     """

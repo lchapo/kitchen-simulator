@@ -8,7 +8,7 @@ from db.connection import (
     css_cursor,
     execute_sql,
 )
-from migrations.create_orders_table import recreate_orders_table
+from db.migrations.create_orders_table import recreate_orders_table
 
 with open('data/orders.json') as f:
     orders = json.load(f)
@@ -111,7 +111,7 @@ def update_db_order_completed(env, order_id):
         execute_sql(SQL, cur)
 
 
-def simulate_orders(orders, simulation_speed=10, num_cooks=10):
+def simulate_orders(orders, simulation_speed=1000, num_cooks=120):
     """Simulate orders coming in over time
 
     Args:
@@ -136,4 +136,4 @@ def simulate_orders(orders, simulation_speed=10, num_cooks=10):
 
 
 if __name__ == '__main__':
-    simulate_orders(orders, simulation_speed=100, num_cooks=10)
+    simulate_orders(orders)
