@@ -49,12 +49,12 @@ app_layout = [
     html.Div(
         [
             dcc.Graph(
-                id='total-spend',
-                style={'display': 'inline-block', 'height': '40vh', 'width': '23vw', 'margin-right': '1vw'},
-            ),
-            dcc.Graph(
                 id='stacked-bar-chart',
                 style={'display': 'inline-block', 'height': '40vh', 'width': '44vw', 'margin-right': '1vw'},
+            ),
+            dcc.Graph(
+                id='total-spend',
+                style={'display': 'inline-block', 'height': '40vh', 'width': '23vw', 'margin-right': '1vw'},
             ),
             dcc.Graph(
                 id='pie-chart',
@@ -111,14 +111,14 @@ def update_time_graph(n):
 
     fig={
         'data': [
-            {'x': df.index, 'y': df['Queued'], 'type': 'line', 'name': 'Queued', 'line': {'color': '#f4d44d'}},
-            {'x': df.index, 'y': df['In Progress'], 'type': 'line', 'name': 'In Progress', 'line': {'color': '#91dfd2'}},
+            {'x': df.index, 'y': df['Queued'], 'type': 'line', 'name': 'Queued', 'line': {'color': '#f4d44d', 'width': '3'}},
+            {'x': df.index, 'y': df['In Progress'], 'type': 'line', 'name': 'In Progress', 'line': {'color': '#00FFFF', 'width': '3'}},
         ],
         'layout': {
-            'title': 'Order Statuses Over Time (PST)',
+            'title': {'text': 'Order Statuses Over Time (PST)', 'xanchor': 'center', 'x': 0.5},
             'plot_bgcolor': '#161A28',
             'paper_bgcolor': '#161A28',
-            'font': {'color': 'white'},
+            'font': {'color': 'white', 'size': 16},
             'yaxis': {'showgrid': False, 'title': '# Orders'},
         }
     }
@@ -131,11 +131,15 @@ def update_time_graph(n):
 def update_pie_chart(n):
     df = spend_by_time_of_day()
     fig = px.pie(df, values="total_spent", names="time_of_day")
+    fig.update_traces(
+        textfont_size=16,
+        marker=dict(line=dict(color='white', width=1))
+    )
     fig['layout'] = {
-        'title': 'Revenue by Time of Day',
+        'title': {'text': 'Revenue by Time of Day', 'xanchor': 'center', 'x': 0.5},
         'plot_bgcolor': '#161A28',
         'paper_bgcolor': '#161A28',
-        'font': {'color': 'white'},
+        'font': {'color': 'white', 'size': 16},
     }
 
     return fig
@@ -158,13 +162,13 @@ def update_stacked_bar_chart(n):
         df, x='dow', y='total_spent', color='service'
     )
     fig['layout'] = {
-        'title': 'Revenue by Day',
+        'title': {'text': 'Revenue by Day', 'xanchor': 'center', 'x': 0.5},
         'plot_bgcolor': '#161A28',
         'paper_bgcolor': '#161A28',
-        'font': {'color': 'white'},
+        'font': {'color': 'white', 'size': 16},
         'barmode': 'stack',
         'yaxis': {'showgrid': False},
-        'font': {'color': 'white'},
+        'font': {'color': 'white', 'size': 16},
         'legend': {'traceorder': 'reversed'},
     }
 
@@ -184,10 +188,10 @@ def update_total_spend(n):
         'value': val,
     }]
     layout= {
-        'title': 'Total Revenue',
+        'title': {'text': 'Total Revenue', 'xanchor': 'center', 'x': 0.5},
         'plot_bgcolor': '#161A28',
         'paper_bgcolor': '#161A28',
-        'font': {'color': 'white'},
+        'font': {'color': 'white', 'size': 16},
     }
 
     fig = {'data': data, 'layout': layout}
@@ -222,10 +226,10 @@ def update_avg_order_time(n):
         }
     }]
     layout= {
-        'title': 'Avg Time to Order Completion (Recent Orders)',
+        'title': {'text': 'Avg Time to Complete Recent Orders', 'xanchor': 'center', 'x': 0.5},
         'plot_bgcolor': '#161A28',
         'paper_bgcolor': '#161A28',
-        'font': {'color': 'white'},
+        'font': {'color': 'white', 'size': 16},
     }
     fig = {'data': data, 'layout': layout}
 
