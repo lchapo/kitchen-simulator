@@ -111,7 +111,7 @@ def update_db_order_completed(env, order_id):
         execute_sql(SQL, cur)
 
 
-def simulate_orders(orders, simulation_speed=1000, num_cooks=120):
+def simulate_orders(orders, simulation_speed=300, num_cooks=120):
     """Simulate orders coming in over time
 
     Args:
