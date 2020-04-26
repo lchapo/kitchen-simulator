@@ -19,6 +19,7 @@ from sql import (
     recent_order_times,
     max_timestamp,
     orders_by_status,
+    spend_by_day_and_service,
     spend_by_time_of_day,
     total_spend,
 )
@@ -38,6 +39,7 @@ app.layout = html.Div(
             dcc.Graph(id='pie-chart'),
             dcc.Graph(id='total-spend'),
             dcc.Graph(id='avg-order-time'),
+            dcc.Graph(id='stacked-bar-chart'),
             dcc.Interval(
                 id='interval-component',
                 interval=REFRESH_INTERVAL_SECONDS * 1000, # in milliseconds
@@ -111,6 +113,34 @@ def update_pie_chart(n):
         'plot_bgcolor': '#161A28',
         'paper_bgcolor': '#161A28',
         'font': {'color': 'white'},
+    }
+
+    return fig
+
+
+@app.callback(Output('stacked-bar-chart', 'figure'),
+              [Input('interval-component', 'n_intervals')])
+def update_stacked_bar_chart(n):
+    df = spend_by_day_and_service()
+    df['dow'] = df['dow'].map({
+        0: 'Sun',
+        1: 'Mon',
+        2: 'Tues',
+        3: 'Wed',
+        4: 'Thurs',
+        5: 'Fri',
+        6: 'Sat',
+    })
+    fig = px.bar(
+        df, x='dow', y='total_spent', color='service'
+    )
+    fig['layout'] = {
+        'title': 'Spend by Day',
+        'plot_bgcolor': '#161A28',
+        'paper_bgcolor': '#161A28',
+        'font': {'color': 'white'},
+        'barmode': 'stack',
+        'yaxis': {'showgrid': False},
     }
 
     return fig

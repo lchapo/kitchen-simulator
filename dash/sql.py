@@ -50,23 +50,15 @@ def all_timestamps():
 
 
 @query_to_df
-def spend_by_time_of_day_and_service():
+def spend_by_day_and_service():
     return """
     SELECT
     service
-    , CASE
-        WHEN cast(strftime('%H', received_at - 8*60*60, 'unixepoch') as int)
-          BETWEEN 5 AND 10 THEN '1-Breakfast'
-        WHEN cast(strftime('%H', received_at - 8*60*60, 'unixepoch') as int)
-          BETWEEN 11 AND 15 THEN '2-Lunch'
-        WHEN cast(strftime('%H', received_at - 8*60*60, 'unixepoch') as int)
-          BETWEEN 16 AND 22 THEN '3-Dinner'
-        ELSE '4-Late Night'
-        END as time_of_day
+    , cast(strftime('%w', received_at - 8*60*60, 'unixepoch') as int) as dow
     , SUM(total_price) AS total_spent
     FROM orders
-    GROUP BY time_of_day, service
-    ORDER BY time_of_day ASC, service DESC;
+    GROUP BY service, dow
+    ORDER BY service, dow;
     """
 
 @fetch_one
