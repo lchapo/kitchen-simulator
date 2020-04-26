@@ -226,7 +226,7 @@ def update_avg_order_time(n):
         }
     }]
     layout= {
-        'title': {'text': 'Avg Time to Complete Recent Orders', 'xanchor': 'center', 'x': 0.5},
+        'title': {'text': 'Avg Recent Order Fulfillment Time', 'xanchor': 'center', 'x': 0.5},
         'plot_bgcolor': '#161A28',
         'paper_bgcolor': '#161A28',
         'font': {'color': 'white', 'size': 16},
