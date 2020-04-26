@@ -30,24 +30,47 @@ server = app.server
 # how frequently to refresh the data
 REFRESH_INTERVAL_SECONDS = 5
 
-app.layout = html.Div(
+app_layout = [
+    html.H4('Simulation Live Dashboard'),
+    html.Div(id='sim-time', style={'color': '#00FFFF'}),
     html.Div(
         [
-            html.H4('Simulation Live Dashboard'),
-            html.Div(id='sim-time'),
-            dcc.Graph(id='time-graph'),
-            dcc.Graph(id='pie-chart'),
-            dcc.Graph(id='total-spend'),
-            dcc.Graph(id='avg-order-time'),
-            dcc.Graph(id='stacked-bar-chart'),
-            dcc.Interval(
-                id='interval-component',
-                interval=REFRESH_INTERVAL_SECONDS * 1000, # in milliseconds
-                n_intervals=0
-            )
+            dcc.Graph(
+                id='time-graph',
+                style={'display': 'inline-block', 'height': '40vh', 'width': '68vw', 'margin-right': '1vw'},
+            ),
+            dcc.Graph(
+                id='avg-order-time',
+                style={'display': 'inline-block', 'height': '40vh', 'width': '29vw'},
+            ),
         ],
+        style={'width': '100%', 'margin-left': '1vw', 'margin-right': '1vw'}
+    ),
+    html.Div(
+        [
+            dcc.Graph(
+                id='total-spend',
+                style={'display': 'inline-block', 'height': '40vh', 'width': '23vw', 'margin-right': '1vw'},
+            ),
+            dcc.Graph(
+                id='stacked-bar-chart',
+                style={'display': 'inline-block', 'height': '40vh', 'width': '44vw', 'margin-right': '1vw'},
+            ),
+            dcc.Graph(
+                id='pie-chart',
+                style={'display': 'inline-block', 'height': '40vh', 'width': '29vw'},
+            ),
+        ],
+        style={'width': '100%', 'margin-left': '1vw', 'margin-right': '1vw','margin-top': '1vw', 'margin-bottom': '1vw'}
+    ),
+    dcc.Interval(
+        id='interval-component',
+        interval=REFRESH_INTERVAL_SECONDS * 1000, # in milliseconds
+        n_intervals=0
     )
-)
+]
+
+app.layout = html.Div(app_layout)
 
 @app.callback(Output('sim-time', 'children'),
               [Input('interval-component', 'n_intervals')])
@@ -96,7 +119,7 @@ def update_time_graph(n):
             'plot_bgcolor': '#161A28',
             'paper_bgcolor': '#161A28',
             'font': {'color': 'white'},
-            'yaxis': {'showgrid': False},
+            'yaxis': {'showgrid': False, 'title': '# Orders'},
         }
     }
 
@@ -109,7 +132,7 @@ def update_pie_chart(n):
     df = spend_by_time_of_day()
     fig = px.pie(df, values="total_spent", names="time_of_day")
     fig['layout'] = {
-        'title': 'Spend by Time of Day',
+        'title': 'Revenue by Time of Day',
         'plot_bgcolor': '#161A28',
         'paper_bgcolor': '#161A28',
         'font': {'color': 'white'},
@@ -135,12 +158,14 @@ def update_stacked_bar_chart(n):
         df, x='dow', y='total_spent', color='service'
     )
     fig['layout'] = {
-        'title': 'Spend by Day',
+        'title': 'Revenue by Day',
         'plot_bgcolor': '#161A28',
         'paper_bgcolor': '#161A28',
         'font': {'color': 'white'},
         'barmode': 'stack',
         'yaxis': {'showgrid': False},
+        'font': {'color': 'white'},
+        'legend': {'traceorder': 'reversed'},
     }
 
     return fig
@@ -158,7 +183,12 @@ def update_total_spend(n):
         'mode': 'number',
         'value': val,
     }]
-    layout= {'title': 'Total Gross Revenue'}
+    layout= {
+        'title': 'Total Revenue',
+        'plot_bgcolor': '#161A28',
+        'paper_bgcolor': '#161A28',
+        'font': {'color': 'white'},
+    }
 
     fig = {'data': data, 'layout': layout}
 
@@ -168,22 +198,35 @@ def update_total_spend(n):
 @app.callback(Output('avg-order-time', 'figure'),
               [Input('interval-component', 'n_intervals')])
 def update_avg_order_time(n):
-    avg_order_time, avg_queue_time = recent_order_times()
+    avg_order_time = recent_order_times()[0]
+    if avg_order_time <= 40:
+        font_color = '#5ceda5'
+    elif avg_order_time <= 80:
+        font_color = '#F4D44D'
+    else:
+        font_color = '#F45060'
     data= [{
         'type': 'indicator',
         'mode': 'number+gauge',
         'value': avg_order_time,
-        'number': {'valueformat': '.0f', 'suffix': 'm'},
+        'number': {'valueformat': '.0f', 'suffix': 'm', 'font': {'color': font_color}},
         'gauge': {
             'shape': 'gauge',
+            'bar': {'color': 'darkgrey'},
             'axis': {'range': [0, 120]},
             'steps': [
-                {'range': [0, avg_queue_time], 'color': '#f4d44d', 'name': 'Queue Time', 'templateitemname': {'visible': True, 'enabled': True}},
-                {'range': [avg_queue_time, avg_order_time], 'color': '#91dfd2', 'name': 'Cook Time', 'templateitemname': {'visible': True, 'enabled': True}},
+                {'range': [0, 40], 'color': '#5ceda5'},
+                {'range': [40, 80], 'color': '#F4D44D'},
+                {'range': [80, 120], 'color': '#F45060'},
             ],
         }
     }]
-    layout= {'title': 'Recent Order Times (Queue | Cook)'}
+    layout= {
+        'title': 'Avg Time to Order Completion (Recent Orders)',
+        'plot_bgcolor': '#161A28',
+        'paper_bgcolor': '#161A28',
+        'font': {'color': 'white'},
+    }
     fig = {'data': data, 'layout': layout}
 
     return fig

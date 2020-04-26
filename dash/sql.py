@@ -85,7 +85,6 @@ def total_spend():
 def recent_order_times():
     return """
     SELECT AVG(completed_at - received_at) / 60 as avg_order_time
-    , AVG(started_at - received_at) / 60 as avg_queue_time
     FROM orders
     WHERE id in (
         SELECT id
