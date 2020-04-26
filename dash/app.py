@@ -14,6 +14,7 @@ import numpy as np
 
 from sql import (
     all_timestamps,
+    max_timestamp,
     orders_by_status,
 )
 
@@ -42,7 +43,10 @@ app.layout = html.Div(
 @app.callback(Output('live-update-text', 'children'),
               [Input('interval-component', 'n_intervals')])
 def update_time(n):
-    return f"Simulation Time: {str(datetime.now())}"
+    ts = max_timestamp()
+    formatted_ts = datetime.fromtimestamp(ts).strftime('%a %m/%d %I:%M%p UTC')
+    formatted_ts = formatted_ts.replace(" 0", " ")
+    return f"Simulation Time: {formatted_ts}"
 
 
 @app.callback(Output('live-update-graph', 'figure'),

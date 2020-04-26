@@ -4,7 +4,7 @@ from datetime import datetime
 import json
 import simpy
 
-from common import (
+from db.connection import (
     css_cursor,
     execute_sql,
 )

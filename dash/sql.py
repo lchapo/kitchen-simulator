@@ -2,7 +2,10 @@
 
 import pandas as pd
 
-from connection import css_connection
+from db.connection import (
+    css_connection,
+    css_cursor,
+)
 
 
 def query_to_df(sql_func):
@@ -32,3 +35,16 @@ def all_timestamps():
     , completed_at
     FROM orders;
     """
+
+def max_timestamp():
+    sql = """
+    SELECT max(
+        max(coalesce(received_at,0))
+        , max(coalesce(started_at,0))
+        , max(coalesce(completed_at,0))
+    )
+    FROM orders;
+    """
+    with css_cursor() as cur:
+        cur.execute(sql)
+        return cur.fetchone()[0]

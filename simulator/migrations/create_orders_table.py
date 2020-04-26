@@ -2,7 +2,7 @@
 
 import sys
 
-from common import (
+from db.connection import (
     execute_sql,
     css_cursor,
 )
