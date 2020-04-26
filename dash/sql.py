@@ -18,12 +18,12 @@ def query_to_df(sql_func):
 
 
 def fetch_one(sql_func):
-    """Helper to run sql and return single value"""
+    """Helper to run sql and return single row"""
     def get_value():
         sql = sql_func()
         with css_cursor() as cur:
             cur.execute(sql)
-            return cur.fetchone()[0]
+            return cur.fetchone()
     return get_value
 
 
@@ -90,20 +90,23 @@ def total_spend():
     """
 
 @fetch_one
-def avg_order_time_mins():
+def recent_order_times():
     return """
-    SELECT AVG(completed_at - received_at) / 60
+    SELECT AVG(completed_at - received_at) / 60 as avg_order_time
+    , AVG(started_at - received_at) / 60 as avg_queue_time
     FROM orders
-    WHERE status = 'Completed';
-    """
-
-
-@fetch_one
-def avg_queue_time_mins():
-    return """
-    SELECT AVG(started_at - received_at) / 60
-    FROM orders
-    WHERE status in ('In Progress', 'Completed');
+    WHERE id in (
+        SELECT id
+        FROM orders
+        WHERE status = 'Completed'
+        ORDER BY completed_at DESC
+        LIMIT 50
+    ) --limit to most recent 50 completed orders
+    AND completed_at >= (
+        SELECT max(completed_at) - 60
+        FROM orders
+    ) --limit to past hour
+    ;
     """
 
 

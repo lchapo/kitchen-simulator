@@ -12,11 +12,11 @@ from dash.dependencies import (
 import dash_html_components as html
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
 import numpy as np
 
 from sql import (
     all_timestamps,
+    recent_order_times,
     max_timestamp,
     orders_by_status,
     spend_by_time_of_day,
@@ -37,6 +37,7 @@ app.layout = html.Div(
             dcc.Graph(id='time-graph'),
             dcc.Graph(id='pie-chart'),
             dcc.Graph(id='total-spend'),
+            dcc.Graph(id='avg-order-time'),
             dcc.Interval(
                 id='interval-component',
                 interval=REFRESH_INTERVAL_SECONDS * 1000, # in milliseconds
@@ -49,7 +50,7 @@ app.layout = html.Div(
 @app.callback(Output('sim-time', 'children'),
               [Input('interval-component', 'n_intervals')])
 def update_time(n):
-    ts = max_timestamp()
+    ts = max_timestamp()[0]
     formatted_ts = datetime.fromtimestamp(ts).strftime('%a %m/%d %I:%M%p PST')
     formatted_ts = formatted_ts.replace(" 0", " ")
     return f"Simulation Time: {formatted_ts}"
@@ -121,16 +122,41 @@ def update_pie_chart(n):
 @app.callback(Output('total-spend', 'figure'),
               [Input('interval-component', 'n_intervals')])
 def update_total_spend(n):
-    val = total_spend()
-    fig = go.Figure(go.Indicator(
-        mode = "number",
-        value = val,
-    ))
+    val = total_spend()[0]
+    data= [{
+        'type': 'indicator',
+        'mode': 'number',
+        'value': val,
+    }]
+    layout= {'title': 'Total Gross Revenue'}
 
-    fig.update_layout(paper_bgcolor = "lightgray")
+    fig = {'data': data, 'layout': layout}
 
     return fig
 
+
+@app.callback(Output('avg-order-time', 'figure'),
+              [Input('interval-component', 'n_intervals')])
+def update_avg_order_time(n):
+    avg_order_time, avg_queue_time = recent_order_times()
+    data= [{
+        'type': 'indicator',
+        'mode': 'number+gauge',
+        'value': avg_order_time,
+        'number': {'valueformat': '.0f', 'suffix': 'm'},
+        'gauge': {
+            'shape': 'gauge',
+            'axis': {'range': [0, 120]},
+            'steps': [
+                {'range': [0, avg_queue_time], 'color': '#f4d44d', 'name': 'Queue Time', 'templateitemname': {'visible': True, 'enabled': True}},
+                {'range': [avg_queue_time, avg_order_time], 'color': '#91dfd2', 'name': 'Cook Time', 'templateitemname': {'visible': True, 'enabled': True}},
+            ],
+        }
+    }]
+    layout= {'title': 'Recent Order Times (Queue | Cook)'}
+    fig = {'data': data, 'layout': layout}
+
+    return fig
 
 
 if __name__ == '__main__':
