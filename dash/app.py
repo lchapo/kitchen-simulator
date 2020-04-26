@@ -28,7 +28,7 @@ app.layout = html.Div(
         [
             html.H4('Simulation Live Dashboard'),
             html.Div(id='live-update-text'),
-            # dcc.Graph(id='live-update-graph'),
+            dcc.Graph(id='live-update-graph'),
             dcc.Graph(id='time-graph'),
             dcc.Interval(
                 id='interval-component',
@@ -45,24 +45,24 @@ def update_time(n):
     return f"Simulation Time: {str(datetime.now())}"
 
 
-# @app.callback(Output('live-update-graph', 'figure'),
-#               [Input('interval-component', 'n_intervals')])
-# def update_graph_live(n):
-#     df = orders_by_status()
-#     fig={
-#         'data': [
-#             {'x': df['status'], 'y': df['cnt'], 'type': 'bar'},
-#         ],
-#         'layout': {
-#             'title': 'Current Orders by Status',
-#             'plot_bgcolor': 'rgba(0,0,0,0)',
-#             'paper_bgcolor': 'rgba(0,0,0,0)',
-#             'font': {'color': 'white'},
-#             'yaxis': {'showgrid': False},
-#         }
-#     }
+@app.callback(Output('live-update-graph', 'figure'),
+              [Input('interval-component', 'n_intervals')])
+def update_graph_live(n):
+    df = orders_by_status()
+    fig={
+        'data': [
+            {'x': df['status'], 'y': df['cnt'], 'type': 'bar'},
+        ],
+        'layout': {
+            'title': 'Current Orders by Status',
+            'plot_bgcolor': 'rgba(0,0,0,0)',
+            'paper_bgcolor': 'rgba(0,0,0,0)',
+            'font': {'color': 'white'},
+            'yaxis': {'showgrid': False},
+        }
+    }
 
-#     return fig
+    return fig
 
 
 @app.callback(Output('time-graph', 'figure'),
@@ -70,11 +70,11 @@ def update_time(n):
 def update_time_graph(n):
     df = all_timestamps()
     start = int(min(df['received_at']))
-    end = int(max([
-        max(df["received_at"]),
-        max(df["started_at"]) or 0,
-        max(df["completed_at"]) or 0,
-    ]))
+    end = int(max(np.concatenate([
+        df["received_at"].values,
+        df["started_at"].fillna(0).values,
+        df["completed_at"].fillna(0).values,
+    ])))
 
     # calculate status counts at different time frames
     timestamps = [ts for ts in range(start, end, 600)]
