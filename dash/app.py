@@ -12,13 +12,15 @@ from dash.dependencies import (
 import dash_html_components as html
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import numpy as np
 
 from sql import (
     all_timestamps,
     max_timestamp,
     orders_by_status,
-    spend_by_service,
+    spend_by_time_of_day,
+    total_spend,
 )
 
 app = dash.Dash(__name__)
@@ -33,7 +35,8 @@ app.layout = html.Div(
             html.H4('Simulation Live Dashboard'),
             html.Div(id='sim-time'),
             dcc.Graph(id='time-graph'),
-            dcc.Graph(id='spend-by-service'),
+            dcc.Graph(id='pie-chart'),
+            dcc.Graph(id='total-spend'),
             dcc.Interval(
                 id='interval-component',
                 interval=REFRESH_INTERVAL_SECONDS * 1000, # in milliseconds
@@ -97,23 +100,40 @@ def update_time_graph(n):
     return fig
 
 
-@app.callback(Output('spend-by-service', 'figure'),
+@app.callback(Output('pie-chart', 'figure'),
               [Input('interval-component', 'n_intervals')])
-def update_graph_live(n):
-    df = spend_by_service()
-    fig = px.bar(df, x="time_of_day", y="total_spent", color="service")
+def update_pie_chart(n):
+    df = spend_by_time_of_day()
+    fig = px.pie(df, values="total_spent", names="time_of_day")
     fig['layout'] = {
-        'title': 'Total Spend by Service and Meal',
+        'title': 'Spend by Time of Day',
         'plot_bgcolor': '#161A28',
         'paper_bgcolor': '#161A28',
         'font': {'color': 'white'},
-        'yaxis': {'showgrid': False},
-        'barmode': 'stack',
     }
 
     return fig
 
 
+##########################
+##    SINGLE NUMBERS    ##
+##########################
+@app.callback(Output('total-spend', 'figure'),
+              [Input('interval-component', 'n_intervals')])
+def update_total_spend(n):
+    val = total_spend()
+    fig = go.Figure(go.Indicator(
+        mode = "number",
+        value = val,
+    ))
+
+    fig.update_layout(paper_bgcolor = "lightgray")
+
+    return fig
+
+
+
 if __name__ == '__main__':
+    # give simulator time to kick off
     time.sleep(3)
     app.run_server(host='0.0.0.0', port=8050)
