@@ -32,7 +32,7 @@ REFRESH_INTERVAL_SECONDS = 5
 
 app_layout = [
     html.H4('Simulation Live Dashboard'),
-    html.Div(id='sim-time', style={'color': '#00FFFF'}),
+    html.H6(id='sim-time', style={'color': '#00FFFF'}),
     html.Div(
         [
             dcc.Graph(
