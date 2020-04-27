@@ -2,6 +2,9 @@
 
 from datetime import datetime
 import json
+import logging
+import sys
+
 import simpy
 
 from db.connection import (
@@ -10,12 +13,21 @@ from db.connection import (
 )
 from db.migrations.create_orders_table import recreate_orders_table
 
+
+# configure logger
+log = logging.getLogger(__name__)
+log.setLevel(logging.INFO)
+log.addHandler(
+    logging.StreamHandler(sys.stderr)
+)
+
+# load data
 with open('data/orders.json') as f:
     orders = json.load(f)
-
-# transform items into cook time lookup
 with open('data/items.json') as f:
     menu = json.load(f)
+
+# transform items into cook time lookup
 cook_times = {i['name']:i['cook_time'] for i in menu}
 
 #TODO: write a test case for full and fractional seconds
@@ -73,6 +85,9 @@ def process_order(env, order, kitchen):
     """Process a single order"""
     # wait until {order_time} to trigger order
     yield env.timeout(get_time(order['ordered_at'])-ENV_START)
+    if not order['items']:
+        log.info(f"Order {order['id']} has no items and will not be processed")
+        return
     update_db_order_received(env, order)
     events = []
     for item in order['items']:
@@ -111,19 +126,21 @@ def update_db_order_completed(env, order_id):
         execute_sql(SQL, cur)
 
 
-def simulate_orders(orders, simulation_speed=300, num_cooks=120):
+def simulate_orders(orders, speed=300, num_cooks=120):
     """Simulate orders coming in over time
 
     Args:
-      simulation_speed (int): speed at which to run the simulator, where
-        1 is real time, 2 is twice as fast, etc.
+      speed (int): speed at which to run the simulator, where 1 is real
+        time, 2 is twice as fast, etc.
+      num_cooks: cooks (simulation resources) available to cook items in
+        parallel
     """
     # run migrations
     recreate_orders_table()
     # Create an environment and start the setup process
     env = simpy.rt.RealtimeEnvironment(
         initial_time=ENV_START,
-        factor=1/simulation_speed,
+        factor=1/speed,
         strict=False,
     )
     kitchen = Kitchen(env, num_cooks=num_cooks)
@@ -132,6 +149,7 @@ def simulate_orders(orders, simulation_speed=300, num_cooks=120):
         env.process(process_order(env, order, kitchen))
 
     # Execute
+    log.info(f"Starting simulation at speed {speed}X with {num_cooks} cooks")
     env.run()
 
 
