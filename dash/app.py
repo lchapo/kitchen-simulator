@@ -1,6 +1,7 @@
 #!/usr/bin python
 
 from datetime import datetime
+import logging
 import time
 
 import dash
@@ -26,6 +27,10 @@ from sql import (
 
 app = dash.Dash(__name__)
 server = app.server
+
+# suppress component update messages
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)
 
 # how frequently to refresh the data
 REFRESH_INTERVAL_SECONDS = 5
