@@ -5,6 +5,7 @@ services:
     build: './simulator'
     volumes:
       - ./db:/simulator/db/
+      - ./parameters:/simulator/parameters/
 
   dash-app:
     build: './dash'
@@ -14,3 +15,4 @@ services:
       - simulator
     volumes:
       - ./db:/dash/db/
+      - ./parameters:/dash/parameters/

@@ -15,6 +15,7 @@ import pandas as pd
 import plotly.express as px
 import numpy as np
 
+from parameters.simulation_parameters import DASHBOARD_REFRESH_INTERVAL
 from sql import (
     all_timestamps,
     recent_order_times,
@@ -32,8 +33,6 @@ server = app.server
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 
-# how frequently to refresh the data
-REFRESH_INTERVAL_SECONDS = 5
 
 app_layout = [
     html.H4('Simulation Live Dashboard'),
@@ -70,7 +69,7 @@ app_layout = [
     ),
     dcc.Interval(
         id='interval-component',
-        interval=REFRESH_INTERVAL_SECONDS * 1000, # in milliseconds
+        interval=DASHBOARD_REFRESH_INTERVAL * 1000, # in milliseconds
         n_intervals=0
     )
 ]

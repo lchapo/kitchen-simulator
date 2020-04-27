@@ -12,6 +12,10 @@ from db.connection import (
     execute_sql,
 )
 from db.migrations.create_orders_table import recreate_orders_table
+from parameters.simulation_parameters import (
+    NUM_COOKS,
+    SIMULATION_SPEED,
+)
 
 
 # configure logger
@@ -126,7 +130,7 @@ def update_db_order_completed(env, order_id):
         execute_sql(SQL, cur)
 
 
-def simulate_orders(orders, speed=300, num_cooks=120):
+def simulate_orders(orders, speed=SIMULATION_SPEED, num_cooks=NUM_COOKS):
     """Simulate orders coming in over time
 
     Args:
