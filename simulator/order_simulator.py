@@ -34,7 +34,7 @@ with open('data/items.json') as f:
 # transform items into cook time lookup
 cook_times = {i['name']:i['cook_time'] for i in menu}
 
-#TODO: write a test case for full and fractional seconds
+
 def get_time(ts):
     """Parse timestamps into epochs; ignore fractional seconds"""
     ts_parts = ts.split('.')
