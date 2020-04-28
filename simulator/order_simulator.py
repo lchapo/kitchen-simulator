@@ -18,6 +18,9 @@ from parameters.simulation_parameters import (
 )
 
 
+##########################
+##         SETUP        ##
+##########################
 # configure logger
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
@@ -46,28 +49,49 @@ tstamps = [get_time(order['ordered_at']) for order in orders]
 ENV_START = min(tstamps) - TIME_BUFFER
 
 
+##########################
+##   MANAGE RESOURCES   ##
+##########################
 class Kitchen(object):
     """A kitchen has a limited number of cooks to make food in parallel.
 
     Assume each cook prepares one item at a time, and any cook is capable
-    of preparing any item. When an order is received, it goes to an arbitrary
+    of preparing any item. When an item is received, it goes to an arbitrary
     available cook and takes {cook_time} seconds to prepare. If no cooks
-    are available, the order is enqueued until a cook is available.
+    are available, the item is enqueued until a cook is available.
+
+    Args:
+      env (simpy.environment): the simulation environment
+      num_cooks (int): total resources available
     """
     def __init__(self, env, num_cooks):
         self.env = env
         self.resources = simpy.Resource(env, num_cooks)
+        # track order ids for items started to avoid updating the database
+        # as multiple items come in for the same order
         self.orders_started = []
 
     def prepare_food(self, order_id, cook_time):
-        """The cooking process. Called when a cook is available, and takes {cook_time} to complete"""
+        """The cooking process for a single item
+
+        This should be called multiple times per order, once for each
+        item within the order.
+
+        Args:
+          order_id (int): primary key for the order
+          cook_time (int): the seconds for the item to be cooked
+        """
         if order_id not in self.orders_started:
             self.orders_started.append(order_id)
             update_db_order_started(self.env, order_id)
         yield self.env.timeout(cook_time)
 
 
+##########################
+##      GENERATORS      ##
+##########################
 def request_item(env, order, item, kitchen):
+    """Request a kitchen resource for one item in an order"""
     with kitchen.resources.request() as request:
         # waiting until a cook is available
         yield request
@@ -89,11 +113,16 @@ def process_order(env, order, kitchen):
         for _ in range(item['quantity']):
             # request each order item simultaneously
             events.append(env.process(request_item(env, order, item, kitchen))) 
+    # wait until all items in the order have been cooked
     yield env.all_of(events)
     update_db_order_completed(env, order['id'])
 
 
+##########################
+##      DB UPDATES      ##
+##########################
 def update_db_order_received(env, order):
+    """Inserts an order when it is first received"""
     SQL = f"""
     INSERT INTO orders (id, status, received_at, customer_name, service, total_price, items)
     VALUES (
@@ -123,6 +152,7 @@ def update_db_order_started(env, order_id):
 
 
 def update_db_order_completed(env, order_id):
+    """Updates the database when the order is completed"""
     SQL = f"""
     UPDATE orders
     SET completed_at = {env.now}
@@ -133,18 +163,21 @@ def update_db_order_completed(env, order_id):
         execute_sql(SQL, cur)
 
 
+##########################
+##    RUN SIMULATOR     ##
+##########################
 def simulate_orders(orders, speed=SIMULATION_SPEED, num_cooks=NUM_COOKS):
     """Simulate orders coming in over time
 
     Args:
       speed (int): speed at which to run the simulator, where 1 is real
         time, 2 is twice as fast, etc.
-      num_cooks: cooks (simulation resources) available to cook items in
-        parallel
+      num_cooks (int): cooks (simulation resources) available to cook
+        items in parallel
     """
-    # run migrations
+    # clear table before starting
     recreate_orders_table()
-    # Create an environment and start the setup process
+    # create an environment and start the setup process
     env = simpy.rt.RealtimeEnvironment(
         initial_time=ENV_START,
         factor=1/speed,
@@ -155,7 +188,7 @@ def simulate_orders(orders, speed=SIMULATION_SPEED, num_cooks=NUM_COOKS):
         order['id'] = idx+1
         env.process(process_order(env, order, kitchen))
 
-    # Execute
+    # run simulation
     log.info(f"Starting simulation at speed {speed}X with {num_cooks} cooks")
     env.run()
 
