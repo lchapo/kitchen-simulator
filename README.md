@@ -27,7 +27,7 @@ The order simulator uses a framework called [SimPy](https://simpy.readthedocs.io
 ## Dashboard
 The dashboard runs inside of a Flask app using an open-source framework called [Dash](https://plotly.com/dash/) which is a high-level framework built on D3 and React. Dash is flexible enough that it would be very easy to extend this dashboard to include custom visualizations, filters, etc.
 
-The data powering the dashboard is re-queried every 5 seconds (by default) using a pre-defined set of SQL Queries, one per chart. The query results are in most cases pulled into a Pandas dataframe which allows for further transformation if necessary and works well with the Dash API.
+The data powering the dashboard is re-queried every 5 seconds (by default) using a pre-defined set of SQL Queries, one per chart. The query results are in most cases pulled into a Pandas dataframe which allows for further transformation as necessary and interfaces well with the Dash API.
 
 # Discussion
 
