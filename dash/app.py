@@ -33,7 +33,9 @@ server = app.server
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 
-
+##########################
+##      APP LAYOUT      ##
+##########################
 app_layout = [
     html.H4('Simulation Live Dashboard'),
     html.H6(id='sim-time', style={'color': '#00FFFF'}),
@@ -76,19 +78,24 @@ app_layout = [
 
 app.layout = html.Div(app_layout)
 
-@app.callback(Output('sim-time', 'children'),
-              [Input('interval-component', 'n_intervals')])
-def update_time(n):
-    ts = max_timestamp()[0]
-    formatted_ts = datetime.fromtimestamp(ts).strftime('%a %m/%d %I:%M%p PST')
+
+##########################
+## DATA TRANSFORMATIONS ##
+##########################
+def format_ts(epoch):
+    """Turn epoch into formatted PST timestamp"""
+    formatted_ts = datetime.fromtimestamp(epoch).strftime('%a %m/%d %I:%M%p PST')
     formatted_ts = formatted_ts.replace(" 0", " ")
-    return f"Simulation Time: {formatted_ts}"
+    return formatted_ts
 
 
-@app.callback(Output('time-graph', 'figure'),
-              [Input('interval-component', 'n_intervals')])
-def update_time_graph(n):
-    df = all_timestamps()
+def get_status_over_time(df):
+    """Transform a dataframe of timestamps into statuses over time
+
+    Args:
+      df (pd.DataFrame): dataframe with received_at, started_at, and
+        completed_at columns as epoch values
+    """
     start = int(min(df['received_at']))
     end = int(max(np.concatenate([
         df["received_at"].values,
@@ -98,20 +105,41 @@ def update_time_graph(n):
 
     # calculate status counts at different time frames
     timestamps = [ts for ts in range(start, end, 600)]
+
+    # queued: received but not yet started; awaiting kitchen resource
     queued = [(
         (df['received_at'].values <= ts) &
         (ts < df['started_at'].fillna(np.inf).values)
     ).sum() for ts in timestamps]
+
     # in progress: started but not yet completed
     in_progress = [(
         (df['started_at'].fillna(np.inf).values <= ts) &
         (ts < df['completed_at'].fillna(np.inf).values)
     ).sum() for ts in timestamps]
 
-    df = pd.DataFrame(
+    new_df = pd.DataFrame(
         data={'Queued': queued, 'In Progress': in_progress},
         index=pd.to_datetime(timestamps, unit='s'),
     )
+    return new_df
+
+
+##########################
+##    CHART UPDATES     ##
+##########################
+@app.callback(Output('sim-time', 'children'),
+              [Input('interval-component', 'n_intervals')])
+def update_time(n):
+    ts = max_timestamp()[0]
+    return f"Simulation Time: {format_ts(ts)}"
+
+
+@app.callback(Output('time-graph', 'figure'),
+              [Input('interval-component', 'n_intervals')])
+def update_time_graph(n):
+    df = all_timestamps()
+    df = get_status_over_time(df)
 
     fig={
         'data': [
@@ -179,9 +207,6 @@ def update_stacked_bar_chart(n):
     return fig
 
 
-##########################
-##    SINGLE NUMBERS    ##
-##########################
 @app.callback(Output('total-spend', 'figure'),
               [Input('interval-component', 'n_intervals')])
 def update_total_spend(n):

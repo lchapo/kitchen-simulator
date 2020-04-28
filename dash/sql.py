@@ -61,6 +61,7 @@ def spend_by_day_and_service():
     ORDER BY service, dow;
     """
 
+
 @fetch_one
 def max_timestamp():
     """Max timestamp to approximate simulator current time"""
@@ -80,6 +81,7 @@ def total_spend():
     SELECT SUM(total_price)
     FROM orders;
     """
+
 
 @fetch_one
 def recent_order_times():
@@ -101,9 +103,6 @@ def recent_order_times():
     """
 
 
-
-
-
 @query_to_df
 def spend_by_time_of_day():
     return """
@@ -122,37 +121,3 @@ def spend_by_time_of_day():
     GROUP BY time_of_day
     ORDER BY time_of_day ASC;
     """
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
