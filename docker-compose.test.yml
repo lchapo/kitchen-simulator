@@ -1,0 +1,18 @@
+version: "3.7"
+services:
+  
+  test-simulator:
+    build:
+      context: './simulator'
+      dockerfile: Dockerfile.test
+    volumes:
+      - ./db:/simulator/db/
+      - ./parameters:/simulator/parameters/
+
+  test-dash-app:
+    build:
+      context: './dash'
+      dockerfile: Dockerfile.test
+    volumes:
+      - ./db:/dash/db/
+      - ./parameters:/dash/parameters/
