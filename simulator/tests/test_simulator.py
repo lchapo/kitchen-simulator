@@ -5,7 +5,7 @@ from unittest import (
 
 from order_simulator import *
 
-class TestCommon(TestCase):
+class TestSimulator(TestCase):
 
     def test_get_time_full_seconds(self):
         """Test string to epoch conversion"""
@@ -22,13 +22,18 @@ class TestCommon(TestCase):
 
 
     def test_regular_order_processed(self):
-        """Order should be received and completed"""
+        """Order should be received and completed
+
+        Each database update should only be made once per order
+        """
         with mock.patch('order_simulator.update_db_order_received') as order_received, \
+                mock.patch('order_simulator.update_db_order_started') as order_started, \
                 mock.patch('order_simulator.update_db_order_completed') as order_completed, \
                 mock.patch('order_simulator.css_cursor'):
             order = {
                 'items': [
-                    {'name': 'Puff Pastry Chicken Potpie', 'price_per_unit': 1, 'quantity': 1}
+                    {'name': 'Puff Pastry Chicken Potpie', 'price_per_unit': 1, 'quantity': 1},
+                    {'name': 'The Ultimate Chicken Noodle Soup', 'price_per_unit': 1, 'quantity': 2},
                 ],
                 'name': 'Testy McTestFace',
                 'service': 'SoTesty',
@@ -36,12 +41,14 @@ class TestCommon(TestCase):
             }
             simulate_orders([order])
             order_received.assert_called_once()
+            order_started.assert_called_once()
             order_completed.assert_called_once()
 
 
     def test_empty_order_not_processed(self):
         """An empty order should not be processed"""
         with mock.patch('order_simulator.update_db_order_received') as order_received, \
+                mock.patch('order_simulator.update_db_order_started') as order_started, \
                 mock.patch('order_simulator.update_db_order_completed') as order_completed, \
                 mock.patch('order_simulator.css_cursor'):
             empty_order = {
@@ -52,4 +59,14 @@ class TestCommon(TestCase):
             }
             simulate_orders([empty_order])
             order_received.assert_not_called()
+            order_started.assert_not_called()
             order_completed.assert_not_called()
+
+ 
+    def test_migration(self):
+        """Migration should clear existing data"""
+        recreate_orders_table()
+        with css_cursor() as cur:
+            cur.execute("SELECT COUNT(*) FROM orders;")
+            result = cur.fetchone()[0]
+        assert result == 0

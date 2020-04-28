@@ -45,6 +45,7 @@ TIME_BUFFER = 10
 tstamps = [get_time(order['ordered_at']) for order in orders]
 ENV_START = min(tstamps) - TIME_BUFFER
 
+
 class Kitchen(object):
     """A kitchen has a limited number of cooks to make food in parallel.
 
@@ -62,19 +63,9 @@ class Kitchen(object):
         """The cooking process. Called when a cook is available, and takes {cook_time} to complete"""
         if order_id not in self.orders_started:
             self.orders_started.append(order_id)
-            self.update_time_started(order_id)
+            update_db_order_started(self.env, order_id)
         yield self.env.timeout(cook_time)
 
-    def update_time_started(self, order_id):
-        """Updates the database when the order starts being prepared"""
-        SQL = f"""
-        UPDATE orders
-        SET started_at = {self.env.now}
-        , status = 'In Progress'
-        WHERE id = {order_id};
-        """
-        with css_cursor() as cur:
-            execute_sql(SQL, cur)
 
 def request_item(env, order, item, kitchen):
     with kitchen.resources.request() as request:
@@ -114,6 +105,18 @@ def update_db_order_received(env, order):
         , {sum([i['price_per_unit'] * i['quantity'] for i in order['items']])}
         , '{json.dumps({i['name'].replace("'", "''"):i['quantity'] for i in order['items']})}'
     );
+    """
+    with css_cursor() as cur:
+        execute_sql(SQL, cur)
+
+
+def update_db_order_started(env, order_id):
+    """Updates the database when the order starts being prepared"""
+    SQL = f"""
+    UPDATE orders
+    SET started_at = {env.now}
+    , status = 'In Progress'
+    WHERE id = {order_id};
     """
     with css_cursor() as cur:
         execute_sql(SQL, cur)
