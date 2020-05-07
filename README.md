@@ -28,7 +28,7 @@ make unittest
 
 Tests are run via their own docker-compose file, which in turn uses Dockerfile.test files for each service. This allows us to mount the same volumes and thus create the same filesystem used to run the application, which is necessary for module imports to work correctly in our test cases. This also allows us to run tests for both services from one place.
 
-# Architecture Overview
+# App Architecture
 The app runs two distinct processes: the order simulator and an analytics dashboard web app. The processes communicate via a shared SQLite database: the order simulator writes to this database and the dashboard reads from it. This separation of concerns allows each process to run with an independent OS, filesystem, and hardware resources such that one could be scaled independently of the other so long as they both communicate via the shared database. The processes are networked via a simple docker-compose file which also mounts a parameters file to each process for convenience in defining all system parameters in one place.
 
 ## Order Simulator
