@@ -1,7 +1,7 @@
 # Overview
 This app simulates the real-time processing of food orders received by one kitchen. An order may have multiple items, and the kitchen has a fixed number of cooks who can each cook one item at a time. If no cooks are available, the items are added to a queue and processed in order as soon as a cook becomes free. The number of cooks and simulator speed are configurable.
 
-All data needed for this simulation is stored in simulator/data, but the system runs as if orders are received in real time, i.e. no part of the system is allowed to access future orders from the orders.json file.
+All data needed for this simulation is stored in [simulator/data](./simulator/data/), but the system runs as if orders are received in real time, i.e. no part of the system is allowed to access future orders from the orders.json file.
 
 As the simulator runs, it stores order data in a local SQLite database that is shared with a Flask app running on a separate thread. The Flask app displays a data dashboard giving real-time insight into operational and business metrics while the simulation is running.
 
